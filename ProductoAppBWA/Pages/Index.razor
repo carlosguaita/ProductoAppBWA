@@ -1,0 +1,85 @@
+﻿@page "/"
+@using ProductoAppBWA.Models
+@using ProductoAppBWA.Service
+@inject NavigationManager NavigationManager
+@inject IAPIService iapiservice
+
+
+<PageTitle>Inicio</PageTitle>
+
+<h1>Productos</h1>
+
+<a class="btn btn-primary" role="button" href="producto">Nuevo Producto</a>
+
+
+@if (ListaProductos == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>IdProducto</th>
+                <th>Nombre</th>
+                <th>Cantidad</th>
+                <th>Descripción</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var producto in ListaProductos)
+            {
+                <tr>
+                    <td>@producto.IdProducto</td>
+                    <td>@producto.Nombre</td>
+                    <td>@producto.Cantidad</td>
+                    <td>@producto.Descripcion</td>
+                    <td>
+
+                        <div class="btn-group" role="group">
+                            <button @onclick="()=>Eliminar(producto.IdProducto)" class="btn btn-danger"><i class="bi bi-trash-fill"></i></button>
+                            <button @onclick="()=>Editar(producto.IdProducto)" class="btn btn-warning"><i class="bi bi-pencil-square"></i></button>
+                            <button @onclick="()=>Ver(producto.IdProducto)" class="btn btn-info"><i class="bi bi-eye-fill"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code{
+
+    public List<Producto>? ListaProductos { set; get; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        ListaProductos = await iapiservice.GetProductos();
+    }
+
+    public async void Eliminar(int IdProducto)
+    {
+
+        //Util.ListaProductos.Remove(producto);
+        await iapiservice.DeleteProducto(IdProducto);
+        ListaProductos = await iapiservice.GetProductos();
+        StateHasChanged();
+    }
+
+    public void Ver(int IdProducto)
+    {
+
+        NavigationManager.NavigateTo($"/producto/{IdProducto}/true/");
+
+    }
+
+    public void Editar(int IdProducto)
+    {
+
+        NavigationManager.NavigateTo($"/producto/{IdProducto}/false/");
+    }
+
+}
+
