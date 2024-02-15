@@ -4,43 +4,65 @@
 @using ProductoAppBWA.Service
 @inject NavigationManager NavigationManager
 @inject IAPIService iapiservice
+@inject IAPIStorageService iapistorageservice
 
 
 @if (IdProducto == 0)
-{
-    <h3>Nuevo Producto</h3>
-}
-else
-{
-    <h3>Editar Producto</h3>
-}
+    {
+        <h3>Nuevo Producto</h3>
+    }
+    else if (!IsEditing)
+    {
+        <h3>Editar Producto</h3>
+    }
+    else
+    {
+        <h3>Ver Producto</h3>
+    }
+
 
 <EditForm Model="producto" OnSubmit="Enviar">
-    <div class="form-group row mb-3">
-        <label for="Nombre" class="col-md-2 col-form-label">Nombre:</label>
-        <div class="col-md-10">
-            <InputText id="Nombre" class="form-control" @bind-Value="producto.Nombre" disabled="@IsEditing" />
+    <div class="row">
+        <div class="col-8">
+            <div class="form-group mb-3">
+                <label for="Nombre">Nombre:</label>
+                <div class="col">
+                    <InputText id="Nombre" class="form-control" @bind-Value="producto.Nombre" disabled="@IsEditing" />
+                </div>
+            </div>
+            <div class="form-group mb-3">
+                <label for="Cantidad">Cantidad:</label>
+                <div class="col">
+                    <InputNumber id="Cantidad" class="form-control" @bind-Value="producto.Cantidad" disabled="@IsEditing" />
+                </div>
+            </div>
+            <div class="form-group mb-3">
+                <label for="Descripcion">Descripcion:</label>
+                <div class="col">
+                    <InputTextArea id="Descripcion" class="form-control" @bind-Value="producto.Descripcion" disabled="@IsEditing" />
+                </div>
+            </div>
         </div>
-    </div>
-    <div class="form-group row mb-3">
-        <label for="Cantidad" class="col-md-2 col-form-label">Cantidad:</label>
-        <div class="col-md-10">
-            <InputNumber id="Cantidad" class="form-control" @bind-Value="producto.Cantidad" disabled="@IsEditing" />
-        </div>
-    </div>
-    <div class="form-group row mb-3">
-        <label for="Descripcion" class="col-md-2 col-form-label">Descripcion:</label>
-        <div class="col-md-10">
-            <InputTextArea id="Descripcion" class="form-control" @bind-Value="producto.Descripcion" disabled="@IsEditing" />
+        <div class="col-2">
+            <label for="UrlImagen">Imagen:</label>
+            <img src="@imageSource" width="200" height="200" style="border-radius:5px; border:1px solid #bbb9b9" />
+            @if (!IsEditing)
+            {
+                <div class="form-group mb-3">
+
+                    <div class="col">
+                        <InputFile id="UrlImagen" class="form-control" OnChange="LoadFiles" name="file" disabled="@IsEditing" />
+                    </div>
+                </div>
+            }
         </div>
     </div>
 
-    <div class="form-group row mb-3">
-        <label for="UrlImagen" class="col-md-2 col-form-label">Imagen:</label>
-        <div class="col-md-10">
-            <InputFile id="UrlImagen" class="form-control" name="file" @bind-Value="producto.UrlImage" disabled="@IsEditing" />
-        </div>
-    </div>
+
+
+    
+
+   
     <div class="btn-group" role="group">
         @if (!IsEditing)
         {
@@ -59,6 +81,8 @@ else
     [Parameter]
     public bool IsEditing { set; get; }
 
+    private IBrowserFile? file { set; get; }
+    private string? imageSource { set; get; }
 
     //public Producto? producto { set; get; }
     public Producto producto = new Producto();
@@ -70,8 +94,22 @@ else
         {
             //producto = Util.ListaProductos.FirstOrDefault(x => x.IdProducto == IdProducto);
             producto = await iapiservice.GetProducto(IdProducto);
+            imageSource = await iapistorageservice.GetUrlImage(producto.UrlImage);
 
         }
+    }
+
+
+    private async Task LoadFiles(InputFileChangeEventArgs e)
+    {
+        file = e.File;
+
+        IBrowserFile imgFile = e.File;
+        string imageType = imgFile.ContentType;
+        var resizedImageFile = await imgFile.RequestImageFileAsync(imageType, 200, 200);
+        var buffers = new byte[resizedImageFile.Size];
+        await resizedImageFile.OpenReadStream().ReadAsync(buffers);
+        imageSource = $"data:{imageType};base64,{Convert.ToBase64String(buffers)}";
     }
 
     private async Task Enviar()
@@ -80,10 +118,23 @@ else
         {
             //producto.IdProducto = Util.ListaProductos.Count() + 1;
             //Util.ListaProductos.Add(producto);
+
+            Console.WriteLine($"**********************");
+            if (file != null)
+            {
+                producto.UrlImage = await iapistorageservice.PostImage(file);
+            }
+            Console.WriteLine(producto.UrlImage);
             await iapiservice.PostProducto(producto);
         }
         else
         {
+            if(file != null)
+            {
+                await iapistorageservice.DeleteImage(producto.UrlImage);
+                producto.UrlImage = await iapistorageservice.PostImage(file);
+
+            }
             await iapiservice.PutProducto(IdProducto, producto);
         }
 

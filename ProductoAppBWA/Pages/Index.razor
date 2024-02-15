@@ -3,6 +3,7 @@
 @using ProductoAppBWA.Service
 @inject NavigationManager NavigationManager
 @inject IAPIService iapiservice
+@inject IAPIStorageService iapistorageservice
 
 
 <PageTitle>Inicio</PageTitle>
@@ -39,7 +40,7 @@ else
                     <td>
 
                         <div class="btn-group" role="group">
-                            <button @onclick="()=>Eliminar(producto.IdProducto)" class="btn btn-danger"><i class="bi bi-trash-fill"></i></button>
+                            <button @onclick="()=>Eliminar(producto)" class="btn btn-danger"><i class="bi bi-trash-fill"></i></button>
                             <button @onclick="()=>Editar(producto.IdProducto)" class="btn btn-warning"><i class="bi bi-pencil-square"></i></button>
                             <button @onclick="()=>Ver(producto.IdProducto)" class="btn btn-info"><i class="bi bi-eye-fill"></i></button>
                         </div>
@@ -59,11 +60,15 @@ else
         ListaProductos = await iapiservice.GetProductos();
     }
 
-    public async void Eliminar(int IdProducto)
+    public async void Eliminar(Producto producto)
     {
 
         //Util.ListaProductos.Remove(producto);
-        await iapiservice.DeleteProducto(IdProducto);
+        await iapiservice.DeleteProducto(producto.IdProducto);
+        if (producto.UrlImage != null)
+        {
+            await iapistorageservice.DeleteImage(producto.UrlImage);
+        }
         ListaProductos = await iapiservice.GetProductos();
         StateHasChanged();
     }
