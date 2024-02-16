@@ -19,45 +19,44 @@
 }
 else
 {
-    <table class="table table-hover">
-        <thead>
-            <tr>
-                <th>IdProducto</th>
-                <th>Nombre</th>
-                <th>Cantidad</th>
-                <th>Descripción</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var producto in ListaProductos)
-            {
-                <tr>
-                    <td>@producto.IdProducto</td>
-                    <td>@producto.Nombre</td>
-                    <td>@producto.Cantidad</td>
-                    <td>@producto.Descripcion</td>
-                    <td>
-
-                        <div class="btn-group" role="group">
-                            <button @onclick="()=>Eliminar(producto)" class="btn btn-danger"><i class="bi bi-trash-fill"></i></button>
-                            <button @onclick="()=>Editar(producto.IdProducto)" class="btn btn-warning"><i class="bi bi-pencil-square"></i></button>
-                            <button @onclick="()=>Ver(producto.IdProducto)" class="btn btn-info"><i class="bi bi-eye-fill"></i></button>
+    <div class="container">
+        <div class="row row-cols-4">
+        @foreach (var producto in ListaProductos)
+        {
+                <div class="col" style=" margin:5px">
+                    <div class="card" style="width: 15rem;>
+                        <img src=@producto.UrlImage class="card-img-top">
+                        <div class="card-body">
+                            <h5 class="card-title">@producto.Nombre</h5>
+                            <p class="card-text">@producto.Descripcion</p>
+                            <div class="btn-group" role="group">
+                                <button @onclick="()=>Eliminar(producto)" class="btn btn-danger"><i class="bi bi-trash-fill"></i></button>
+                                <button @onclick="()=>Editar(producto.IdProducto)" class="btn btn-warning"><i class="bi bi-pencil-square"></i></button>
+                                <button @onclick="()=>Ver(producto.IdProducto)" class="btn btn-info"><i class="bi bi-eye-fill"></i></button>
+                            </div>
                         </div>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+                    </div>
+                    </div>                     
+        }
+        </div>
+    </div>
+
+
+    
 }
 
 @code{
 
     public List<Producto>? ListaProductos { set; get; }
+    public int colums { set; get; } = 0;
 
     protected override async Task OnInitializedAsync()
     {
         ListaProductos = await iapiservice.GetProductos();
+        foreach (var producto in ListaProductos)
+        {
+            producto.UrlImage = await iapistorageservice.GetUrlImage(producto.UrlImage);
+        }
     }
 
     public async void Eliminar(Producto producto)
@@ -70,6 +69,10 @@ else
             await iapistorageservice.DeleteImage(producto.UrlImage);
         }
         ListaProductos = await iapiservice.GetProductos();
+        foreach (var producto2 in ListaProductos)
+        {
+            producto2.UrlImage = await iapistorageservice.GetUrlImage(producto2.UrlImage);
+        }
         StateHasChanged();
     }
 
